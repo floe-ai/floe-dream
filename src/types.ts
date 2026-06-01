@@ -99,6 +99,16 @@ export interface CallFrame {
   decisionLog: FrameDecisionLog;
 }
 
+export interface CallFrameMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export interface CallFrameMessageBuilderOptions {
+  includeSystemSummary?: boolean;
+  systemIntro?: string;
+}
+
 // --- Store Interface ---
 
 export interface Store {
@@ -124,6 +134,7 @@ export interface Store {
 export interface OrchestratorConfig {
   store: Store;
   recentTurnLimit?: number;
+  maxFrameTokens?: number;
   pointeriseThreshold?: number;
   dropThreshold?: number;
   decayLambda?: number;

@@ -65,10 +65,17 @@ export function createSqliteStore(dbPath: string = ':memory:'): Store {
     },
 
     getEvents(limit?: number): IngestionEvent[] {
-      const sql = limit
-        ? `SELECT * FROM events ORDER BY timestamp DESC LIMIT ?`
-        : `SELECT * FROM events ORDER BY timestamp ASC`;
-      const rows = limit ? db.prepare(sql).all(limit) : db.prepare(sql).all();
+      if (limit) {
+        const rows = db.prepare(`
+          SELECT * FROM (
+            SELECT * FROM events ORDER BY timestamp DESC LIMIT ?
+          ) recent
+          ORDER BY timestamp ASC
+        `).all(limit);
+        return (rows as any[]).map(rowToEvent);
+      }
+
+      const rows = db.prepare(`SELECT * FROM events ORDER BY timestamp ASC`).all();
       return (rows as any[]).map(rowToEvent);
     },
 

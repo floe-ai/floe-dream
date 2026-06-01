@@ -58,4 +58,19 @@ describe('Orchestrator - tracer bullet', () => {
     expect(frame.decisionLog.timestamp).toBeGreaterThan(0);
     expect(frame.decisionLog.tokenEstimate).toBeGreaterThan(0);
   });
+
+  it('keeps recent turns in chronological order when limited', () => {
+    const orchestrator = createOrchestrator({ store, recentTurnLimit: 3 });
+    for (let i = 1; i <= 6; i++) {
+      orchestrator.ingest({
+        id: `evt-${i}`,
+        timestamp: i * 1000,
+        kind: i % 2 === 0 ? 'assistant_message' : 'user_message',
+        content: `message-${i}`,
+      });
+    }
+
+    const frame = orchestrator.buildCallFrame();
+    expect(frame.recentTurns.map(t => t.content)).toEqual(['message-4', 'message-5', 'message-6']);
+  });
 });

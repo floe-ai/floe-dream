@@ -15,6 +15,7 @@ import { buildCallFrame } from './call-frame-builder.js';
 
 const DEFAULT_CONFIG = {
   recentTurnLimit: 10,
+  maxFrameTokens: undefined,
   pointeriseThreshold: 0.3,
   dropThreshold: 0.1,
   decayLambda: 0.05,
@@ -124,7 +125,11 @@ export function createOrchestrator(config: OrchestratorConfig): Orchestrator {
       pointers,
       captureIntents,
       bm25,
-      { recentTurnLimit: cfg.recentTurnLimit, autoRetrieveConfidence: cfg.autoRetrieveConfidence }
+      {
+        recentTurnLimit: cfg.recentTurnLimit,
+        autoRetrieveConfidence: cfg.autoRetrieveConfidence,
+        maxTokens: cfg.maxFrameTokens,
+      }
     );
   }
 

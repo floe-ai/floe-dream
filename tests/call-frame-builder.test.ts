@@ -108,6 +108,30 @@ describe('Call Frame Builder', () => {
     expect(frame.captureHints[0].content).toBe('Important obligation');
   });
 
+  it('applies a token budget to working memory selection', () => {
+    const snapshot: WorkingMemorySnapshot = {
+      goals: [
+        { id: 'g1', kind: 'goal', content: 'Launch the mobile app this Friday', salience: 0.95, strength: 0.95, createdAt: 1, lastReinforcedAt: 1, sourceEventId: 'e1' },
+      ],
+      obligations: [
+        { id: 'o1', kind: 'obligation', content: 'Prepare the executive-ready rollout checklist', salience: 0.98, strength: 0.98, createdAt: 1, lastReinforcedAt: 1, sourceEventId: 'e2' },
+      ],
+      openLoops: [],
+      decisions: [],
+      entities: [],
+      general: [
+        { id: 'x1', kind: 'general', content: 'This is a low-priority note with a lot of extra filler text that should lose to higher-priority items when the frame budget is tight.', salience: 0.35, strength: 0.35, createdAt: 1, lastReinforcedAt: 1, sourceEventId: 'e3' },
+      ],
+    };
+
+    const frame = buildCallFrame([], snapshot, [], [], new BM25Index(), { maxTokens: 25 });
+
+    expect(frame.workingMemory.obligations.length).toBe(1);
+    expect(frame.workingMemory.goals.length + frame.workingMemory.general.length).toBeLessThan(2);
+    expect(frame.decisionLog.tokenEstimate).toBeLessThanOrEqual(25);
+    expect(frame.decisionLog.decisions.some(d => d.action === 'dropped')).toBe(true);
+  });
+
   it('estimates token count based on content size', () => {
     const events: IngestionEvent[] = [
       { id: 'e1', timestamp: 100, kind: 'user_message', content: 'A'.repeat(400) },
