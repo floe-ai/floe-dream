@@ -1,6 +1,6 @@
 {
   "name": "floe-dream",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "Cognitive memory orchestrator for AI agents",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,10 +13,15 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepack": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "keywords": ["ai", "memory", "context", "orchestrator", "agents"],
   "license": "MIT",
   "devDependencies": {
