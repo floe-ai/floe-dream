@@ -2,6 +2,7 @@ import type {
   CallFrame,
   CallFrameMessage,
   CallFrameMessageBuilderOptions,
+  HybridCallFrameMessageBuilderOptions,
   CaptureIntent,
   Pointer,
   RetrievedArtefact,
@@ -11,6 +12,14 @@ import type {
 const DEFAULT_OPTIONS: Required<CallFrameMessageBuilderOptions> = {
   includeSystemSummary: true,
   systemIntro: 'Curated memory frame. Prioritize the latest user intent and use this as supporting context.',
+};
+
+const DEFAULT_HYBRID_OPTIONS: Required<HybridCallFrameMessageBuilderOptions> = {
+  includeSystemSummary: true,
+  systemIntro: DEFAULT_OPTIONS.systemIntro,
+  preserveSystemMessages: true,
+  recentRawTurnLimit: 8,
+  includeFrameRecentTurnsFallback: true,
 };
 
 export function buildCallFrameMessages(
@@ -36,6 +45,47 @@ export function buildCallFrameMessages(
   }
 
   return messages;
+}
+
+export function buildHybridCallFrameMessages(
+  frame: CallFrame,
+  rawMessages: CallFrameMessage[],
+  options?: HybridCallFrameMessageBuilderOptions
+): CallFrameMessage[] {
+  const cfg = { ...DEFAULT_HYBRID_OPTIONS, ...options };
+  const output: CallFrameMessage[] = [];
+
+  if (cfg.preserveSystemMessages) {
+    output.push(...rawMessages.filter(message => message.role === 'system'));
+  }
+
+  if (cfg.includeSystemSummary) {
+    output.push({
+      role: 'system',
+      content: buildSystemSummary(frame, cfg.systemIntro),
+    });
+  }
+
+  const rawTurns = rawMessages
+    .filter(message => message.role === 'user' || message.role === 'assistant')
+    .slice(-cfg.recentRawTurnLimit);
+
+  if (rawTurns.length > 0) {
+    output.push(...rawTurns);
+    return output;
+  }
+
+  if (cfg.includeFrameRecentTurnsFallback) {
+    for (const turn of frame.recentTurns) {
+      if (turn.kind === 'user_message') {
+        output.push({ role: 'user', content: turn.content });
+      } else if (turn.kind === 'assistant_message') {
+        output.push({ role: 'assistant', content: turn.content });
+      }
+    }
+  }
+
+  return output;
 }
 
 function buildSystemSummary(frame: CallFrame, intro: string): string {

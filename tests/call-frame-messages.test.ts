@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCallFrameMessages } from '../src/call-frame-messages.js';
+import { buildCallFrameMessages, buildHybridCallFrameMessages } from '../src/call-frame-messages.js';
 import type { CallFrame } from '../src/types.js';
 
 const frame: CallFrame = {
@@ -38,5 +38,44 @@ describe('buildCallFrameMessages', () => {
       { role: 'user', content: 'Remember the launch is Friday' },
       { role: 'assistant', content: 'Got it' },
     ]);
+  });
+});
+
+describe('buildHybridCallFrameMessages', () => {
+  it('preserves raw recency and appends curated summary', () => {
+    const raw = [
+      { role: 'system', content: 'You are helpful.' },
+      { role: 'user', content: 'old user turn' },
+      { role: 'assistant', content: 'old assistant turn' },
+      { role: 'user', content: 'latest user intent' },
+    ] as const;
+
+    const messages = buildHybridCallFrameMessages(frame, [...raw]);
+
+    expect(messages[0]).toEqual({ role: 'system', content: 'You are helpful.' });
+    expect(messages[1].role).toBe('system');
+    expect(messages[1].content).toContain('Ship launch checklist');
+    expect(messages.slice(-3)).toEqual([
+      { role: 'user', content: 'old user turn' },
+      { role: 'assistant', content: 'old assistant turn' },
+      { role: 'user', content: 'latest user intent' },
+    ]);
+  });
+
+  it('falls back to frame turns when no raw turns are available', () => {
+    const messages = buildHybridCallFrameMessages(frame, [], { recentRawTurnLimit: 2 });
+
+    expect(messages[0].role).toBe('system');
+    expect(messages.slice(1)).toEqual([
+      { role: 'user', content: 'Remember the launch is Friday' },
+      { role: 'assistant', content: 'Got it' },
+    ]);
+  });
+
+  it('can disable frame fallback when no raw turns are available', () => {
+    const messages = buildHybridCallFrameMessages(frame, [], { includeFrameRecentTurnsFallback: false });
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].role).toBe('system');
   });
 });

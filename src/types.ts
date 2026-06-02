@@ -109,6 +109,12 @@ export interface CallFrameMessageBuilderOptions {
   systemIntro?: string;
 }
 
+export interface HybridCallFrameMessageBuilderOptions extends CallFrameMessageBuilderOptions {
+  preserveSystemMessages?: boolean;
+  recentRawTurnLimit?: number;
+  includeFrameRecentTurnsFallback?: boolean;
+}
+
 // --- Store Interface ---
 
 export interface Store {
